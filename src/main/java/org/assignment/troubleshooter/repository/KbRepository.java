@@ -1,6 +1,6 @@
 package org.assignment.troubleshooter.repository;
-
 import org.assignment.troubleshooter.model.KnowledgeEntry;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import tools.jackson.core.JacksonException;
@@ -11,13 +11,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-/** Reads the knowledge base from MySQL. Written for Spring Boot 4 (Jackson 3, package tools.jackson). */
+/** Reads and updates the knowledge base in MySQL. Written for Spring Boot 4 (Jackson 3, package tools.jackson). */
 @Repository
 public class KbRepository {
 
     private static final String SELECT_ALL =
             "SELECT id, title, symptoms, keywords, diagnostic_steps, known_resolution, "
-                    + "escalation_team, embedding FROM knowledge_base ORDER BY id";
+                    + "escalation_team, embedding, embedding_model FROM knowledge_base ORDER BY id";
 
     private final JdbcTemplate jdbc;
     private final JsonMapper mapper = JsonMapper.builder().build();
@@ -30,6 +30,17 @@ public class KbRepository {
         return jdbc.query(SELECT_ALL, this::mapRow);
     }
 
+    /** Stores the vector and the name of the model that produced it. */
+    public void saveEmbedding(String id, double[] vector, String modelId) {
+        try {
+            String json = mapper.writeValueAsString(vector);
+            jdbc.update("UPDATE knowledge_base SET embedding = CAST(? AS JSON), embedding_model = ? WHERE id = ?",
+                    json, modelId, id);
+        } catch (JacksonException e) {
+            throw new IllegalStateException("Could not write embedding for " + id, e);
+        }
+    }
+
     private KnowledgeEntry mapRow(ResultSet rs, int rowNum) throws SQLException {
         return new KnowledgeEntry(
                 rs.getString("id"),
@@ -39,7 +50,8 @@ public class KbRepository {
                 parseStrings(rs.getString("diagnostic_steps")),
                 rs.getString("known_resolution"),
                 rs.getString("escalation_team"),
-                parseVector(rs.getString("embedding")));
+                parseVector(rs.getString("embedding")),
+                rs.getString("embedding_model"));
     }
 
     private List<String> parseStrings(String json) {

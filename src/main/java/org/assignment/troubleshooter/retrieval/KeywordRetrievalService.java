@@ -1,6 +1,6 @@
 package org.assignment.troubleshooter.retrieval;
-
 import org.assignment.troubleshooter.model.KnowledgeEntry;
+
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;

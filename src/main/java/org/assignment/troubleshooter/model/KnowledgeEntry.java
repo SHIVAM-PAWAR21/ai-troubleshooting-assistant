@@ -2,7 +2,7 @@ package org.assignment.troubleshooter.model;
 
 import java.util.List;
 
-/** One row of the knowledge_base table. embedding is null until the indexing step (Phase 3). */
+/** One row of the knowledge_base table. embedding and embeddingModel are null until the entry is indexed. */
 public record KnowledgeEntry(
         String id,
         String title,
@@ -11,5 +11,6 @@ public record KnowledgeEntry(
         List<String> diagnosticSteps,
         String knownResolution,
         String escalationTeam,
-        double[] embedding) {
+        double[] embedding,
+        String embeddingModel) {
 }

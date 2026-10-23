@@ -1,7 +1,7 @@
 package org.assignment.troubleshooter.retrieval;
-
-import org.assignment.troubleshooter.model.KnowledgeEntry;
 import org.assignment.troubleshooter.repository.KbRepository;
+import org.assignment.troubleshooter.model.KnowledgeEntry;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
