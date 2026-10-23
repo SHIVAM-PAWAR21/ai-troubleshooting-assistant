@@ -1,0 +1,279 @@
+[
+  {
+    "id": "q01",
+    "type": "direct",
+    "question": "The payment API is returning HTTP 500",
+    "expected": [
+      "KB-001"
+    ]
+  },
+  {
+    "id": "q02",
+    "type": "direct",
+    "question": "Requests to the API gateway timed out with a 504",
+    "expected": [
+      "KB-002"
+    ]
+  },
+  {
+    "id": "q03",
+    "type": "direct",
+    "question": "We are getting 502 bad gateway from nginx",
+    "expected": [
+      "KB-003"
+    ]
+  },
+  {
+    "id": "q04",
+    "type": "direct",
+    "question": "API returns 503 service unavailable",
+    "expected": [
+      "KB-004"
+    ]
+  },
+  {
+    "id": "q05",
+    "type": "direct",
+    "question": "Users get HTTP 401 unauthorized because the token expired",
+    "expected": [
+      "KB-005"
+    ]
+  },
+  {
+    "id": "q06",
+    "type": "direct",
+    "question": "403 forbidden, access denied for my role",
+    "expected": [
+      "KB-006"
+    ]
+  },
+  {
+    "id": "q07",
+    "type": "direct",
+    "question": "Application cannot connect to MySQL, connection refused on port 3306",
+    "expected": [
+      "KB-007"
+    ]
+  },
+  {
+    "id": "q08",
+    "type": "direct",
+    "question": "Slow SQL query with high CPU and no index",
+    "expected": [
+      "KB-008"
+    ]
+  },
+  {
+    "id": "q09",
+    "type": "direct",
+    "question": "Timeout waiting for connection, the Hikari connection pool is exhausted",
+    "expected": [
+      "KB-009"
+    ]
+  },
+  {
+    "id": "q10",
+    "type": "direct",
+    "question": "The deployment pipeline build failed",
+    "expected": [
+      "KB-010"
+    ]
+  },
+  {
+    "id": "q11",
+    "type": "direct",
+    "question": "Application crashed with OutOfMemoryError",
+    "expected": [
+      "KB-011"
+    ]
+  },
+  {
+    "id": "q12",
+    "type": "direct",
+    "question": "No space left on device, the disk is full",
+    "expected": [
+      "KB-014"
+    ]
+  },
+  {
+    "id": "q13",
+    "type": "paraphrase",
+    "question": "Customers cannot finish checkout and the payment service keeps crashing",
+    "expected": [
+      "KB-001"
+    ]
+  },
+  {
+    "id": "q14",
+    "type": "paraphrase",
+    "question": "The server ran out of storage",
+    "expected": [
+      "KB-014"
+    ]
+  },
+  {
+    "id": "q15",
+    "type": "paraphrase",
+    "question": "The website is very slow to respond",
+    "expected": [
+      "KB-002",
+      "KB-008"
+    ]
+  },
+  {
+    "id": "q16",
+    "type": "paraphrase",
+    "question": "I cannot log in anymore after I changed my password",
+    "expected": [
+      "KB-015"
+    ]
+  },
+  {
+    "id": "q17",
+    "type": "paraphrase",
+    "question": "The browser shows a security warning on our website",
+    "expected": [
+      "KB-013"
+    ]
+  },
+  {
+    "id": "q18",
+    "type": "paraphrase",
+    "question": "The database refuses to let the app connect",
+    "expected": [
+      "KB-007"
+    ]
+  },
+  {
+    "id": "q19",
+    "type": "paraphrase",
+    "question": "The app keeps restarting and memory keeps growing",
+    "expected": [
+      "KB-011"
+    ]
+  },
+  {
+    "id": "q20",
+    "type": "paraphrase",
+    "question": "Our newsletter emails are not arriving",
+    "expected": [
+      "KB-012"
+    ]
+  },
+  {
+    "id": "q21",
+    "type": "paraphrase",
+    "question": "The release failed and we need to roll back",
+    "expected": [
+      "KB-010"
+    ]
+  },
+  {
+    "id": "q22",
+    "type": "paraphrase",
+    "question": "Everyone gets access denied on a page they used to open",
+    "expected": [
+      "KB-006"
+    ]
+  },
+  {
+    "id": "q23",
+    "type": "paraphrase",
+    "question": "Queries take forever and the database CPU is maxed out",
+    "expected": [
+      "KB-008"
+    ]
+  },
+  {
+    "id": "q24",
+    "type": "code",
+    "question": "Got a 503 from the API",
+    "expected": [
+      "KB-004"
+    ]
+  },
+  {
+    "id": "q25",
+    "type": "code",
+    "question": "502 error from the load balancer",
+    "expected": [
+      "KB-003"
+    ]
+  },
+  {
+    "id": "q26",
+    "type": "code",
+    "question": "HTTP 403 when calling the endpoint",
+    "expected": [
+      "KB-006"
+    ]
+  },
+  {
+    "id": "q27",
+    "type": "code",
+    "question": "The gateway returns 504 after 30 seconds",
+    "expected": [
+      "KB-002"
+    ]
+  },
+  {
+    "id": "q28",
+    "type": "vague",
+    "question": "The API is not working",
+    "expected": []
+  },
+  {
+    "id": "q29",
+    "type": "vague",
+    "question": "It does not work",
+    "expected": []
+  },
+  {
+    "id": "q30",
+    "type": "vague",
+    "question": "Something is wrong with the server",
+    "expected": []
+  },
+  {
+    "id": "q31",
+    "type": "out_of_scope",
+    "question": "My laptop screen keeps flickering",
+    "expected": []
+  },
+  {
+    "id": "q32",
+    "type": "out_of_scope",
+    "question": "The printer on floor 3 is jammed",
+    "expected": []
+  },
+  {
+    "id": "q33",
+    "type": "out_of_scope",
+    "question": "My wifi is very slow",
+    "expected": []
+  },
+  {
+    "id": "q34",
+    "type": "out_of_scope",
+    "question": "Excel crashes when I open a large file",
+    "expected": []
+  },
+  {
+    "id": "q35",
+    "type": "out_of_scope",
+    "question": "The VPN is not connecting",
+    "expected": []
+  },
+  {
+    "id": "q36",
+    "type": "out_of_scope",
+    "question": "How do I reset my phone",
+    "expected": []
+  },
+  {
+    "id": "q37",
+    "type": "out_of_scope",
+    "question": "The coffee machine is broken",
+    "expected": []
+  }
+]
