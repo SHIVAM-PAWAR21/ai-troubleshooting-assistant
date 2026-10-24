@@ -157,8 +157,8 @@
     <h1>TroubleDesk</h1>
     <p class="lede">Describe what is going wrong. You get the checks from your team's knowledge base, the entry they came from, and who to escalate to.</p>
 
-    <label class="ask-label" for="query">What is going wrong?</label>
-    <textarea id="query" maxlength="1000" placeholder="For example: the payment API is returning HTTP 500 since this morning"></textarea>
+    <label class="ask-label" for="searchString">What is going wrong?</label>
+    <textarea id="searchString" maxlength="1000" placeholder="For example: the payment API is returning HTTP 500 since this morning"></textarea>
     <div class="actions">
       <button id="go" class="primary" type="button">Find the fix</button>
       <span class="hint">Ctrl+Enter also works. If the knowledge base has no answer, it says so.</span>
@@ -192,7 +192,7 @@
     "The printer on floor 3 is jammed"
   ];
 
-  var box = document.getElementById("query");
+  var box = document.getElementById("searchString");
   var goButton = document.getElementById("go");
   var semanticOnly = document.getElementById("semanticOnly");
   var lastSemanticOnly = false;
@@ -234,17 +234,19 @@
   }
 
   async function ask() {
-    var query = box.value.trim();
-    if (!query) { showError("Describe the issue first, then press Find the fix."); return; }
+    var searchString = box.value.trim();
+    if (!searchString) { showError("Describe the issue first, then press Find the fix."); return; }
     setBusy(true);
     lastSemanticOnly = semanticOnly.checked;
     try {
       var response = await fetch("/api/troubleshoot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query, semanticOnly: lastSemanticOnly })
+        body: JSON.stringify({ searchString: searchString, semanticOnly: lastSemanticOnly })
       });
-      if (response.status === 400) throw new Error("Describe the issue in 1 to 1000 characters.");
+      if (response.status === 400) throw new Error(searchString.length > 1000
+          ? "Describe the issue in 1 to 1000 characters."
+          : "The server rejected the request (HTTP 400). Reload the page with Ctrl+Shift+R and try again.");
       if (!response.ok) throw new Error("The server had a problem (HTTP " + response.status + "). Check the app log, then try again.");
       render(await response.json());
     } catch (err) {
@@ -366,8 +368,8 @@
       if (!lastSemanticOnly) {
         item.appendChild(scoreRow("Exact words", String(Math.round(m.keywordScore)), m.keywordScore / 20 * 100));
       }
-      var cosine = m.cosine === null || m.cosine === undefined;
-      item.appendChild(scoreRow("Meaning", cosine ? "n/a" : m.cosine.toFixed(2), cosine ? 0 : m.cosine * 100));
+      var noCosine = m.cosine === null || m.cosine === undefined;
+      item.appendChild(scoreRow("Meaning", noCosine ? "n/a" : m.cosine.toFixed(2), noCosine ? 0 : m.cosine * 100));
       list.appendChild(item);
     });
     evidence.appendChild(list);

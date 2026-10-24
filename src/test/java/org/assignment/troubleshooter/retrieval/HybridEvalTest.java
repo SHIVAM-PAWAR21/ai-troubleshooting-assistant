@@ -1,6 +1,7 @@
 package org.assignment.troubleshooter.retrieval;
 
 import org.assignment.troubleshooter.model.KnowledgeEntry;
+import org.assignment.troubleshooter.model.Status;
 import org.assignment.troubleshooter.repository.KbRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,16 +28,16 @@ class HybridEvalTest {
     KbIndexer indexer;
 
     @Autowired
-    KeywordRetrievalService keyword;
+    KeywordRetriever keyword;
 
     @Autowired
-    SemanticRetrievalService semantic;
+    SemanticRetriever semantic;
 
     @Test
     void hybridEvaluation() throws Exception {
         indexer.indexAll();
         List<KnowledgeEntry> kb = repo.findAll();
-        assertEquals(15, kb.size());
+        assertEquals(24, kb.size());
         List<EvalSupport.EvalQuestion> qs = EvalSupport.load();
 
         Map<String, List<ScoredEntry>> kw = new HashMap<>();
@@ -51,14 +52,14 @@ class HybridEvalTest {
         System.out.println("method          | type        | top-1 | top-3");
         printRanking("keyword-only", qs, q -> ids(kw.get(q.id())));
         printRanking("semantic-only", qs, q -> ids(sem.get(q.id())));
-        printRanking("hybrid (RRF)", qs, q -> HybridRetrievalService.combine(kw.get(q.id()), sem.get(q.id()), Thresholds.DEFAULT)
+        printRanking("hybrid (RRF)", qs, q -> combine(kw.get(q.id()), sem.get(q.id()), Thresholds.DEFAULT)
                 .ranked().stream().map(r -> r.entry().id()).collect(Collectors.toList()));
 
         // 2. Outcome per question with the default thresholds.
         Thresholds d = Thresholds.DEFAULT;
         System.out.println("\n=== 2. OUTCOMES at " + d + " ===");
         for (EvalSupport.EvalQuestion q : qs) {
-            HybridResult r = HybridRetrievalService.combine(kw.get(q.id()), sem.get(q.id()), d);
+            RetrievalResult r = combine(kw.get(q.id()), sem.get(q.id()), d);
             RankedEntry top = r.ranked().get(0);
             System.out.printf("%-3s %-12s %-22s %-7s expected=%-16s kw=%-3.0f cos=%-5s | %s%n",
                     q.id(), q.type(), r.outcome(), correct(q, r) ? "ok" : "WRONG", q.expected(),
@@ -75,17 +76,17 @@ class HybridEvalTest {
                 if (low >= high) {
                     continue;
                 }
-                Thresholds t = new Thresholds(d.keywordMin(), d.keywordStrong(), low, high);
+                Thresholds t = new Thresholds(d.keywordMin(), d.keywordStrong(), low, high, d.semanticOnlyMin());
                 int correct = 0, falseAnswers = 0, missed = 0;
                 for (EvalSupport.EvalQuestion q : qs) {
-                    HybridResult r = HybridRetrievalService.combine(kw.get(q.id()), sem.get(q.id()), t);
+                    RetrievalResult r = combine(kw.get(q.id()), sem.get(q.id()), t);
                     if (correct(q, r)) {
                         correct++;
                     }
-                    if (r.outcome() == RetrievalOutcome.ANSWER && !rightEntry(q, r)) {
+                    if (r.outcome() == Status.ANSWERED && !rightEntry(q, r)) {
                         falseAnswers++;
                     }
-                    if (IN_SCOPE.contains(q.type()) && r.outcome() != RetrievalOutcome.ANSWER) {
+                    if (IN_SCOPE.contains(q.type()) && r.outcome() != Status.ANSWERED) {
                         missed++;
                     }
                 }
@@ -94,6 +95,11 @@ class HybridEvalTest {
             }
         }
         System.out.println("\nFALSE ANSWERS = answered with the wrong entry, or answered an out-of-scope/vague question. This is the dangerous error.");
+    }
+
+    /** Same steps as HybridSearch, with the thresholds under test instead of the defaults. */
+    private static RetrievalResult combine(List<ScoredEntry> kw, List<ScoredEntry> sem, Thresholds t) {
+        return new RetrievalResult(new OutcomePolicy(t).decideHybrid(kw, sem), new RankFusion().fuse(kw, sem));
     }
 
     private static List<String> ids(List<ScoredEntry> list) {
@@ -126,16 +132,16 @@ class HybridEvalTest {
         System.out.printf("%-15s | %-11s | %d/%d | %d/%d%n", method, "ALL", allTop1, allN, allTop3, allN);
     }
 
-    private static boolean rightEntry(EvalSupport.EvalQuestion q, HybridResult r) {
+    private static boolean rightEntry(EvalSupport.EvalQuestion q, RetrievalResult r) {
         return IN_SCOPE.contains(q.type()) && q.expected().contains(r.ranked().get(0).entry().id());
     }
 
     /** in-scope: answered with an expected entry. vague: anything except ANSWER. out of scope: INSUFFICIENT_KNOWLEDGE. */
-    private static boolean correct(EvalSupport.EvalQuestion q, HybridResult r) {
+    private static boolean correct(EvalSupport.EvalQuestion q, RetrievalResult r) {
         return switch (q.type()) {
-            case "vague" -> r.outcome() != RetrievalOutcome.ANSWER;
-            case "out_of_scope" -> r.outcome() == RetrievalOutcome.INSUFFICIENT_KNOWLEDGE;
-            default -> r.outcome() == RetrievalOutcome.ANSWER && rightEntry(q, r);
+            case "vague" -> r.outcome() != Status.ANSWERED;
+            case "out_of_scope" -> r.outcome() == Status.INSUFFICIENT_KNOWLEDGE;
+            default -> r.outcome() == Status.ANSWERED && rightEntry(q, r);
         };
     }
 }

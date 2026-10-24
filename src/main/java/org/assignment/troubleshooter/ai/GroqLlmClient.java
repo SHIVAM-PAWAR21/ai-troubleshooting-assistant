@@ -1,8 +1,8 @@
 package org.assignment.troubleshooter.ai;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-/** Calls the Groq chat API (OpenAI format) with plain HTTP. Any problem becomes an exception. */
+/** Calls the Groq chat API (OpenAI format) with plain HTTP. Any problem becomes an LlmException. */
 @Component
 public class GroqLlmClient implements LlmClient {
 
@@ -35,7 +35,7 @@ public class GroqLlmClient implements LlmClient {
     @Override
     public String complete(String systemPrompt, String userPrompt) {
         if (apiKey.isBlank()) {
-            throw new IllegalStateException("GROQ_API_KEY is not set");
+            throw new LlmException("GROQ_API_KEY is not set");
         }
         try {
             String body = mapper.writeValueAsString(Map.of(
@@ -52,27 +52,29 @@ public class GroqLlmClient implements LlmClient {
                     .build();
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
-                throw new IllegalStateException("Groq returned HTTP " + response.statusCode());
+                throw new LlmException("Groq returned HTTP " + response.statusCode());
             }
-            return mapper.readValue(response.body(), ChatResponse.class).choices().get(0).message().content();
-        } catch (IOException e) {
-            throw new IllegalStateException("Could not call Groq: " + e.getMessage(), e);
+            ChatResponse reply = mapper.readValue(response.body(), ChatResponse.class);
+            if (reply.choices() == null || reply.choices().isEmpty() || reply.choices().get(0).message() == null) {
+                throw new LlmException("Groq returned no message");
+            }
+            return reply.choices().get(0).message().content();
+        } catch (IOException | JacksonException e) {
+            throw new LlmException("Could not call Groq: " + e, e); // e.g. ConnectException has no message of its own
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Call to Groq was interrupted", e);
+            throw new LlmException("Call to Groq was interrupted", e);
         }
     }
 
     // Only the parts of Groq's reply that we use: choices[0].message.content
-    @JsonIgnoreProperties(ignoreUnknown = true)
+    // Jackson 3 ignores the fields we don't list
     public record ChatResponse(List<Choice> choices) {
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     public record Choice(Message message) {
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     public record Message(String content) {
     }
 }

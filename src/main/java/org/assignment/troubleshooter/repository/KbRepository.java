@@ -1,6 +1,6 @@
 package org.assignment.troubleshooter.repository;
-import org.assignment.troubleshooter.model.KnowledgeEntry;
 
+import org.assignment.troubleshooter.model.KnowledgeEntry;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import tools.jackson.core.JacksonException;
@@ -32,13 +32,8 @@ public class KbRepository {
 
     /** Stores the vector and the name of the model that produced it. */
     public void saveEmbedding(String id, double[] vector, String modelId) {
-        try {
-            String json = mapper.writeValueAsString(vector);
-            jdbc.update("UPDATE knowledge_base SET embedding = CAST(? AS JSON), embedding_model = ? WHERE id = ?",
-                    json, modelId, id);
-        } catch (JacksonException e) {
-            throw new IllegalStateException("Could not write embedding for " + id, e);
-        }
+        jdbc.update("UPDATE knowledge_base SET embedding = CAST(? AS JSON), embedding_model = ? WHERE id = ?",
+                mapper.writeValueAsString(vector), modelId, id);
     }
 
     private KnowledgeEntry mapRow(ResultSet rs, int rowNum) throws SQLException {

@@ -1,7 +1,7 @@
 package org.assignment.troubleshooter.retrieval;
-import org.assignment.troubleshooter.model.KnowledgeEntry;
 
-import org.springframework.stereotype.Service;
+import org.assignment.troubleshooter.model.KnowledgeEntry;
+import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,8 +24,8 @@ import java.util.stream.Collectors;
  *   -4  if the query has an error code and the entry has codes, but none match (code conflict)
  * Entries scoring 0 or less are dropped.
  */
-@Service
-public class KeywordRetrievalService {
+@Component
+public class KeywordRetriever implements Retriever {
 
     static final double CODE_MATCH = 5;
     static final double KEYWORD_MATCH = 3;
@@ -35,6 +35,7 @@ public class KeywordRetrievalService {
 
     private static final Pattern ERROR_CODE = Pattern.compile("\\b([45]\\d\\d)\\b");
 
+    @Override
     public List<ScoredEntry> search(String query, List<KnowledgeEntry> kb) {
         List<String> queryTokens = TextNormalizer.tokens(query);
         Set<String> queryWords = new HashSet<>(queryTokens);

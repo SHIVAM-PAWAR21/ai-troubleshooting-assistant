@@ -2,6 +2,8 @@ package org.assignment.troubleshooter.web;
 
 import org.assignment.troubleshooter.dto.TroubleshootResponse;
 import org.assignment.troubleshooter.service.TroubleshootingService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,7 +15,9 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api")
 public class TroubleshootingController {
 
-    public record Request(String query, Boolean semanticOnly) {
+    private static final Logger log = LoggerFactory.getLogger(TroubleshootingController.class);
+
+    public record Request(String searchString, Boolean semanticOnly) {
     }
 
     private final TroubleshootingService service;
@@ -24,7 +28,9 @@ public class TroubleshootingController {
 
     @PostMapping("/troubleshoot")
     public TroubleshootResponse troubleshoot(@RequestBody Request request) {
-        String query = request.query() == null ? "" : request.query().trim();
+
+        String query = request.searchString() == null ? "" : request.searchString().trim();
+
         if (query.isEmpty() || query.length() > 1000) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Describe the issue in 1 to 1000 characters.");
         }

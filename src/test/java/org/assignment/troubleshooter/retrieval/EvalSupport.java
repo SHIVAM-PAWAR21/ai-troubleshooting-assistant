@@ -14,6 +14,10 @@ final class EvalSupport {
     record EvalQuestion(String id, String type, String question, List<String> expected) {
     }
 
+    /** Counts for one question type at one threshold. */
+    record Score(int top1, int top3, int count, int rejected) {
+    }
+
     private EvalSupport() {
     }
 
@@ -23,8 +27,8 @@ final class EvalSupport {
         }
     }
 
-    /** Returns {top1 hits, top3 hits, question count, rejected} for one question type at one threshold. */
-    static int[] score(List<EvalQuestion> all, Function<EvalQuestion, List<ScoredEntry>> results,
+    /** Counts top-1 hits, top-3 hits, questions and rejected questions for one question type at one threshold. */
+    static Score score(List<EvalQuestion> all, Function<EvalQuestion, List<ScoredEntry>> results,
                        String type, double threshold) {
         int top1 = 0, top3 = 0, count = 0, rejected = 0;
         for (EvalQuestion q : all) {
@@ -47,7 +51,7 @@ final class EvalSupport {
                 }
             }
         }
-        return new int[]{top1, top3, count, rejected};
+        return new Score(top1, top3, count, rejected);
     }
 
     static String top3(List<ScoredEntry> r) {

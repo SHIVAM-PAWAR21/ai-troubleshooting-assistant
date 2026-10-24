@@ -1,5 +1,6 @@
 package org.assignment.troubleshooter.service;
 
+import org.assignment.troubleshooter.ai.LlmException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,10 +33,10 @@ class LlmReplyTest {
 
     @Test
     void rejectsRepliesThatAreNotUsable() {
-        assertThrows(IllegalArgumentException.class, () -> LlmReply.parse("I cannot help with that."));
-        assertThrows(IllegalArgumentException.class, () -> LlmReply.parse(null));
-        assertThrows(IllegalArgumentException.class, () -> LlmReply.parse("{\"covered\": true, \"summary\": "));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(LlmException.class, () -> LlmReply.parse("I cannot help with that."));
+        assertThrows(LlmException.class, () -> LlmReply.parse(null));
+        assertThrows(LlmException.class, () -> LlmReply.parse("{\"covered\": true, \"summary\": "));
+        assertThrows(LlmException.class,
                 () -> LlmReply.parse("{\"covered\": true, \"summary\": \"s\", \"steps\": []}"));
     }
 }

@@ -62,7 +62,7 @@ class GroqLlmClientTest {
         String url = startFakeApi(401, "{\"error\":\"invalid key\"}");
         GroqLlmClient client = new GroqLlmClient("wrong", "test-model", url);
 
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> client.complete("s", "u"));
+        LlmException e = assertThrows(LlmException.class, () -> client.complete("s", "u"));
         assertTrue(e.getMessage().contains("401"));
     }
 
@@ -71,7 +71,7 @@ class GroqLlmClientTest {
         String url = startFakeApi(200, "{}");
         GroqLlmClient client = new GroqLlmClient("", "test-model", url);
 
-        assertThrows(IllegalStateException.class, () -> client.complete("s", "u"));
+        assertThrows(LlmException.class, () -> client.complete("s", "u"));
         assertEquals(0, requests.get());
     }
 }
