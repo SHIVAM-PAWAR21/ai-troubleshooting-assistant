@@ -485,24 +485,24 @@ AI Usage and My Own Contribution :
 I used an AI assistant (GPT) as a helper while building this project.
 I wrote and own the Plan and design decisions, and I can explain every class.
 
-# Where AI Helped
+### Where AI Helped
 Explaining ideas I was new to : cosine similarity and rank fusion, RAG, LLM
 Reviewing my code and suggesting how to split it into smaller classes and use object oriented design principles.
 Helping me write and check the test setup (MySQL in a container, unit tests).
 
-# What I Did Myself
+### What I Did Myself
 Set up MySQL and the local embedding model (all-MiniLM-L6-v2), and ran the app on my own machine.
 Wrote the knowledge-base entries (24 in total, including the 9 payments entries).
 Ran the evaluation tests, read the output tables, and chose the thresholds from the results instead of guessing.
 Added the semantic-only toggle across the service, controller, retrieval class, web page and tests, then checked it in the browser.
 Decided the main rule of the project: the knowledge base is the truth, the AI only explains it, and "I don't know" is a rule in code, not a choice made by the AI.
 
-# How I Handled AI in the Product Itself
+### How I Handled AI in the Product Itself
 The local embedding model (all-MiniLM-L6-v2) handles semantic search.
 The AI model (Groq) only rewrites the one KB entry the code selected.
 Source, escalation team and known fix always come from the database.
 If the AI fails, the app still answers with the steps stored in the KB.
 The page tells the user to check the steps before acting.
 
-# I do not trust AI output blindly: I tested it with 37 labelled questions and checked the results myself.
+### I do not trust AI output blindly: I tested it with 37 labelled questions and checked the results myself.
 
