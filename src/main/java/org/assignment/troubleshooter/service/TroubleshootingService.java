@@ -53,23 +53,24 @@ public class TroubleshootingService {
     public TroubleshootResponse troubleshoot(String query) {
         HybridResult result = retrieval.search(query, repo.findAll());
         return switch (result.outcome()) {
-            case INSUFFICIENT_KNOWLEDGE -> notInKnowledgeBase("I could not find anything related to this in the knowledge base.");
+            case INSUFFICIENT_KNOWLEDGE -> notInKnowledgeBase("I could not find anything related to this in the knowledge base.", result);
             case NEED_MORE_INFORMATION -> new TroubleshootResponse(Status.NEED_MORE_INFORMATION,
                     "I am not sure which issue this is. The entries below may be related, but I need more details.",
                     List.of(), null,
                     result.ranked().stream().limit(2).map(r -> label(r.entry())).toList(),
-                    null, FOLLOW_UPS);
-            case ANSWER -> answer(query, result.ranked().get(0).entry());
+                    null, FOLLOW_UPS, matches(result));
+            case ANSWER -> answer(query, result);
         };
     }
 
-    private TroubleshootResponse answer(String query, KnowledgeEntry entry) {
+    private TroubleshootResponse answer(String query, HybridResult result) {
+        KnowledgeEntry entry = result.ranked().get(0).entry();
         String summary;
         List<String> steps;
         try {
             LlmReply reply = LlmReply.parse(llm.complete(SYSTEM_PROMPT, userPrompt(query, entry)));
             if (!reply.covered()) {
-                return notInKnowledgeBase("The closest knowledge-base entry does not fit this issue.");
+                return notInKnowledgeBase("The closest knowledge-base entry does not fit this issue.", result);
             }
             summary = reply.summary();
             steps = reply.steps();
@@ -81,12 +82,20 @@ public class TroubleshootingService {
             steps = entry.diagnosticSteps();
         }
         return new TroubleshootResponse(Status.ANSWERED, summary, steps, entry.knownResolution(),
-                List.of(label(entry)), entry.escalationTeam(), List.of());
+                List.of(label(entry)), entry.escalationTeam(), List.of(), matches(result));
     }
 
-    private TroubleshootResponse notInKnowledgeBase(String summary) {
+    private TroubleshootResponse notInKnowledgeBase(String summary, HybridResult result) {
         return new TroubleshootResponse(Status.INSUFFICIENT_KNOWLEDGE, summary + " Please share more details.",
-                List.of(), null, List.of(), null, FOLLOW_UPS);
+                List.of(), null, List.of(), null, FOLLOW_UPS, matches(result));
+    }
+
+    /** The three closest entries and their scores, so the page can show how the decision was made. */
+    private static List<TroubleshootResponse.Match> matches(HybridResult result) {
+        return result.ranked().stream().limit(3)
+                .map(r -> new TroubleshootResponse.Match(r.entry().id(), r.entry().title(), r.keywordScore(),
+                        r.cosine() == null ? null : Math.round(r.cosine() * 100) / 100.0))
+                .toList();
     }
 
     private static String label(KnowledgeEntry entry) {
