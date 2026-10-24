@@ -66,4 +66,25 @@ class HybridCombineTest {
         HybridResult none = HybridRetrievalService.combine(List.of(), null, T);
         assertEquals(RetrievalOutcome.INSUFFICIENT_KNOWLEDGE, none.outcome());
     }
+
+    @Test
+    void semanticOnlyAnswersWhenCloseEnough() {
+        HybridResult r = HybridRetrievalService.decideSemanticOnly(List.of(s("A", 0.70), s("B", 0.20)));
+        assertEquals(RetrievalOutcome.ANSWER, r.outcome());
+        assertEquals("A", r.ranked().get(0).entry().id());
+    }
+
+    @Test
+    void semanticOnlyRejectsWeakMatch() {
+        HybridResult r = HybridRetrievalService.decideSemanticOnly(List.of(s("A", 0.20), s("B", 0.10)));
+        assertEquals(RetrievalOutcome.INSUFFICIENT_KNOWLEDGE, r.outcome());
+    }
+
+    @Test
+    void semanticOnlyWithNoVectorsIsUnavailable() {
+        HybridResult r = HybridRetrievalService.decideSemanticOnly(List.of());
+        assertEquals(RetrievalOutcome.INSUFFICIENT_KNOWLEDGE, r.outcome());
+        assertFalse(r.semanticUsed());
+    }
+
 }

@@ -13,7 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api")
 public class TroubleshootingController {
 
-    public record Request(String query) {
+    public record Request(String query, Boolean semanticOnly) {
     }
 
     private final TroubleshootingService service;
@@ -28,6 +28,6 @@ public class TroubleshootingController {
         if (query.isEmpty() || query.length() > 1000) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Describe the issue in 1 to 1000 characters.");
         }
-        return service.troubleshoot(query);
+        return service.troubleshoot(query, Boolean.TRUE.equals(request.semanticOnly()));
     }
 }

@@ -1,6 +1,7 @@
 package org.assignment.troubleshooter.service;
 
 import org.assignment.troubleshooter.ai.LlmClient;
+import org.assignment.troubleshooter.retrieval.RetrievalOutcome;
 import org.assignment.troubleshooter.dto.TroubleshootResponse;
 import org.assignment.troubleshooter.dto.TroubleshootResponse.Status;
 import org.assignment.troubleshooter.model.KnowledgeEntry;
@@ -51,6 +52,13 @@ public class TroubleshootingService {
     }
 
     public TroubleshootResponse troubleshoot(String query) {
+        return troubleshoot(query, false);
+    }
+
+    public TroubleshootResponse troubleshoot(String query, boolean semanticOnly) {
+        if (semanticOnly) {
+            return troubleshootSemanticOnly(query);
+        }
         HybridResult result = retrieval.search(query, repo.findAll());
         return switch (result.outcome()) {
             case INSUFFICIENT_KNOWLEDGE -> notInKnowledgeBase("I could not find anything related to this in the knowledge base.", result);
@@ -61,6 +69,18 @@ public class TroubleshootingService {
                     null, FOLLOW_UPS, matches(result));
             case ANSWER -> answer(query, result);
         };
+    }
+
+    private TroubleshootResponse troubleshootSemanticOnly(String query) {
+        HybridResult result = retrieval.searchSemanticOnly(query, repo.findAll());
+        if (result.outcome() == RetrievalOutcome.ANSWER) {
+            return answer(query, result);
+        }
+        String message = result.semanticUsed()
+                ? "Semantic-only mode: no knowledge-base entry is close enough in meaning to this issue."
+                : "Semantic-only mode: semantic search is not available right now, so nothing was returned.";
+        return new TroubleshootResponse(Status.INSUFFICIENT_KNOWLEDGE, message,
+                List.of(), null, List.of(), null, FOLLOW_UPS, matches(result));
     }
 
     private TroubleshootResponse answer(String query, HybridResult result) {

@@ -162,6 +162,7 @@
     <div class="actions">
       <button id="go" class="primary" type="button">Find the fix</button>
       <span class="hint">Ctrl+Enter also works. If the knowledge base has no answer, it says so.</span>
+      <label class="hint"><input type="checkbox" id="semanticOnly"> Semantic only (match by meaning, not words)</label>
     </div>
 
     <div class="try">
@@ -193,6 +194,8 @@
 
   var box = document.getElementById("query");
   var goButton = document.getElementById("go");
+  var semanticOnly = document.getElementById("semanticOnly");
+  var lastSemanticOnly = false;
   var result = document.getElementById("result");
   var evidence = document.getElementById("evidence");
 
@@ -234,11 +237,12 @@
     var query = box.value.trim();
     if (!query) { showError("Describe the issue first, then press Find the fix."); return; }
     setBusy(true);
+    lastSemanticOnly = semanticOnly.checked;
     try {
       var response = await fetch("/api/troubleshoot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query })
+        body: JSON.stringify({ query: query, semanticOnly: lastSemanticOnly })
       });
       if (response.status === 400) throw new Error("Describe the issue in 1 to 1000 characters.");
       if (!response.ok) throw new Error("The server had a problem (HTTP " + response.status + "). Check the app log, then try again.");
@@ -359,14 +363,16 @@
       var title = el("div", "m-title", m.title + " ");
       title.appendChild(el("span", "m-id", m.id));
       item.appendChild(title);
-      // exact-word scores run from 0 to about 25
-      item.appendChild(scoreRow("Exact words", String(Math.round(m.keywordScore)), m.keywordScore / 20 * 100));
+      if (!lastSemanticOnly) {
+        item.appendChild(scoreRow("Exact words", String(Math.round(m.keywordScore)), m.keywordScore / 20 * 100));
+      }
       var cosine = m.cosine === null || m.cosine === undefined;
       item.appendChild(scoreRow("Meaning", cosine ? "n/a" : m.cosine.toFixed(2), cosine ? 0 : m.cosine * 100));
       list.appendChild(item);
     });
     evidence.appendChild(list);
-    evidence.appendChild(el("p", "why", WHY[data.status] || ""));
+    evidence.appendChild(el("p", "why",
+            lastSemanticOnly ? "Semantic-only mode: ranked by meaning only, no word matching." : (WHY[data.status] || "")));
   }
 
   goButton.addEventListener("click", ask);

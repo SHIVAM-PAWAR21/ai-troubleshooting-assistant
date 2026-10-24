@@ -56,6 +56,30 @@ public class HybridRetrievalService {
         return combine(keywordResults, semanticResults, thresholds);
     }
 
+    /** Cosine cut-off for semantic-only mode. Tune it from the SemanticEvalTest sweep table. */
+    public static final double SEMANTIC_ONLY_MIN = 0.40;
+
+    public HybridResult searchSemanticOnly(String query, List<KnowledgeEntry> kb) {
+        try {
+            return decideSemanticOnly(semantic.search(query, kb));
+        } catch (EmbeddingException e) {
+            log.warn("Semantic-only search failed: {}", e.getMessage());
+            return new HybridResult(RetrievalOutcome.INSUFFICIENT_KNOWLEDGE, List.of(), false);
+        }
+    }
+
+    static HybridResult decideSemanticOnly(List<ScoredEntry> sem) {
+        List<RankedEntry> ranked = new ArrayList<>();
+        for (ScoredEntry s : sem) {
+            ranked.add(new RankedEntry(s.entry(), s.score(), 0.0, s.score()));
+        }
+        boolean used = !sem.isEmpty();
+        boolean match = used && sem.get(0).score() >= SEMANTIC_ONLY_MIN;
+        return new HybridResult(
+                match ? RetrievalOutcome.ANSWER : RetrievalOutcome.INSUFFICIENT_KNOWLEDGE, ranked, used);
+    }
+
+
     /**
      * Merges the two ranked lists and decides the outcome. Pure function, so it can be tested without a database or model.
      *
