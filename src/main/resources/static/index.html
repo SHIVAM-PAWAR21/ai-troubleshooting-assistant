@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TroubleDesk: troubleshooting from your knowledge base</title>
+<style>
+  :root {
+    --paper: #f1f4f7;
+    --surface: #ffffff;
+    --ink: #16202e;
+    --muted: #566274;
+    --line: #d3dae3;
+    --accent: #2447d6;
+    --accent-ink: #ffffff;
+    --answered: #1b7559;
+    --more: #9a5a08;
+    --none: #9c3b2e;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0f141b;
+      --surface: #171f29;
+      --ink: #e6ebf2;
+      --muted: #9aa6b7;
+      --line: #2a3441;
+      --accent: #8fa6ff;
+      --accent-ink: #0f141b;
+      --answered: #58c6a2;
+      --more: #e3a54d;
+      --none: #ea8878;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 1rem/1.55 var(--sans);
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 21rem;
+    gap: 3rem;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 4rem;
+  }
+  @media (max-width: 60rem) {
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 2rem; padding-top: 1.5rem; }
+  }
+
+  h1 {
+    margin: 0 0 .35rem;
+    font: 700 clamp(2rem, 4.2vw, 2.7rem)/1.1 var(--serif);
+    letter-spacing: -.01em;
+  }
+  .lede { margin: 0 0 2rem; color: var(--muted); max-width: 38rem; }
+
+  /* composer */
+  label.ask-label { display: block; font-weight: 600; margin-bottom: .4rem; }
+  textarea {
+    width: 100%;
+    min-height: 7rem;
+    resize: vertical;
+    padding: .8rem .9rem;
+    font: inherit;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  textarea::placeholder { color: var(--muted); }
+  .actions { display: flex; align-items: center; gap: 1rem; margin-top: .75rem; flex-wrap: wrap; }
+  button.primary {
+    font: inherit;
+    font-weight: 600;
+    padding: .6rem 1.2rem;
+    color: var(--accent-ink);
+    background: var(--accent);
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  button.primary:disabled { opacity: .6; cursor: progress; }
+  .hint { color: var(--muted); font-size: .9rem; }
+  .try { margin-top: 1.1rem; }
+  .try p { margin: 0 0 .4rem; color: var(--muted); font-size: .9rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; margin: 0; list-style: none; }
+  button.chip {
+    font: inherit;
+    font-size: .9rem;
+    padding: .3rem .7rem;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    cursor: pointer;
+    text-align: left;
+  }
+  button.chip:hover { border-color: var(--accent); }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  /* result */
+  #result { margin-top: 2.25rem; }
+  .verdict { border-left: 4px solid var(--status, var(--line)); padding: .1rem 0 .1rem 1.1rem; }
+  .verdict--answered { --status: var(--answered); }
+  .verdict--more { --status: var(--more); }
+  .verdict--none { --status: var(--none); }
+  .verdict h2 { margin: 0 0 .5rem; font: 700 1.5rem/1.2 var(--serif); color: var(--status); }
+  .verdict p.summary { margin: 0; font: 1.08rem/1.65 var(--serif); max-width: 40rem; }
+  .block { margin-top: 1.75rem; max-width: 40rem; }
+  .block h3 { margin: 0 0 .5rem; font-size: 1rem; }
+  .block p, .block li { font-family: var(--serif); font-size: 1.05rem; line-height: 1.6; }
+  .block p { margin: 0; }
+  ol.steps { margin: 0; padding-left: 1.4rem; }
+  ol.steps li { margin-bottom: .55rem; padding-left: .2rem; }
+  .source { margin-top: 1.75rem; color: var(--muted); font-size: .92rem; max-width: 40rem; }
+  .error {
+    margin-top: 2rem; padding: .8rem 1rem; max-width: 40rem;
+    border: 1px solid var(--none); border-radius: 6px; color: var(--none);
+  }
+
+  /* evidence rail */
+  aside { align-self: start; }
+  @media (min-width: 60.01rem) { aside { position: sticky; top: 1.5rem; } }
+  aside h2 { margin: 0 0 .25rem; font: 700 1.2rem/1.3 var(--serif); }
+  aside .sub { margin: 0 0 1rem; color: var(--muted); font-size: .92rem; }
+  ul.matches { list-style: none; margin: 0; padding: 0; }
+  ul.matches li {
+    padding: .8rem 0 .8rem .9rem;
+    border-top: 1px solid var(--line);
+    border-left: 3px solid transparent;
+  }
+  ul.matches li.picked { border-left-color: var(--accent); }
+  .m-title { font-weight: 600; font-size: .95rem; }
+  .m-id { color: var(--muted); font-weight: 400; }
+  .score { display: grid; grid-template-columns: 5rem 1fr 2.4rem; align-items: center; gap: .5rem; margin-top: .4rem; font-size: .85rem; color: var(--muted); }
+  .score b { font-weight: 600; color: var(--ink); text-align: right; }
+  .meter { height: .55rem; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .meter span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .6s ease-out; }
+  .why { margin: 1rem 0 0; padding-top: .8rem; border-top: 1px solid var(--line); font-size: .92rem; color: var(--muted); }
+  .empty { color: var(--muted); border-top: 1px solid var(--line); padding-top: .8rem; font-size: .95rem; }
+
+  footer { grid-column: 1 / -1; color: var(--muted); font-size: .88rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce) { .meter span { transition: none; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <main>
+    <h1>TroubleDesk</h1>
+    <p class="lede">Describe what is going wrong. You get the checks from your team's knowledge base, the entry they came from, and who to escalate to.</p>
+
+    <label class="ask-label" for="query">What is going wrong?</label>
+    <textarea id="query" maxlength="1000" placeholder="For example: the payment API is returning HTTP 500 since this morning"></textarea>
+    <div class="actions">
+      <button id="go" class="primary" type="button">Find the fix</button>
+      <span class="hint">Ctrl+Enter also works. If the knowledge base has no answer, it says so.</span>
+    </div>
+
+    <div class="try">
+      <p>Try one of these:</p>
+      <ul class="chips" id="examples"></ul>
+    </div>
+
+    <div id="result" aria-live="polite"></div>
+  </main>
+
+  <aside aria-label="How the match was found">
+    <h2>How this was found</h2>
+    <p class="sub">The three closest knowledge-base entries and how each scored.</p>
+    <div id="evidence"><p class="empty">Ask a question and the closest entries appear here, with their scores.</p></div>
+  </aside>
+
+  <footer>Sample data only. The AI explains the knowledge-base entry and can still be wrong, so check the steps before you act on them.</footer>
+</div>
+
+<script>
+(function () {
+  var EXAMPLES = [
+    "The payment API is returning HTTP 500",
+    "The server ran out of storage",
+    "Got a 503 from the API",
+    "The API is not working",
+    "The printer on floor 3 is jammed"
+  ];
+
+  var box = document.getElementById("query");
+  var goButton = document.getElementById("go");
+  var result = document.getElementById("result");
+  var evidence = document.getElementById("evidence");
+
+  // Everything from the server is added with textContent, never as HTML.
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined && text !== null) node.textContent = text;
+    return node;
+  }
+
+  function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+  function addExamples() {
+    var list = document.getElementById("examples");
+    EXAMPLES.forEach(function (text) {
+      var item = el("li");
+      var chip = el("button", "chip", text);
+      chip.type = "button";
+      chip.addEventListener("click", function () { box.value = text; ask(); });
+      item.appendChild(chip);
+      list.appendChild(item);
+    });
+  }
+
+  function setBusy(busy) {
+    goButton.disabled = busy;
+    goButton.textContent = busy ? "Checking the knowledge base..." : "Find the fix";
+  }
+
+  function showError(message) {
+    clear(result);
+    var box = el("p", "error", message);
+    box.setAttribute("role", "alert");
+    result.appendChild(box);
+  }
+
+  async function ask() {
+    var query = box.value.trim();
+    if (!query) { showError("Describe the issue first, then press Find the fix."); return; }
+    setBusy(true);
+    try {
+      var response = await fetch("/api/troubleshoot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: query })
+      });
+      if (response.status === 400) throw new Error("Describe the issue in 1 to 1000 characters.");
+      if (!response.ok) throw new Error("The server had a problem (HTTP " + response.status + "). Check the app log, then try again.");
+      render(await response.json());
+    } catch (err) {
+      showError(err instanceof TypeError
+        ? "Could not reach the server. Check that the app is running, then try again."
+        : err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  var HEADLINES = {
+    ANSWERED: ["verdict--answered", "This may match a known issue"],
+    NEED_MORE_INFORMATION: ["verdict--more", "I need a little more detail"],
+    INSUFFICIENT_KNOWLEDGE: ["verdict--none", "This is not in the knowledge base"]
+  };
+
+  function render(data) {
+    clear(result);
+    var style = HEADLINES[data.status] || HEADLINES.INSUFFICIENT_KNOWLEDGE;
+    var verdict = el("section", "verdict " + style[0]);
+    verdict.appendChild(el("h2", null, style[1]));
+    verdict.appendChild(el("p", "summary", data.summary));
+    result.appendChild(verdict);
+
+    if (data.status === "ANSWERED") renderAnswer(data);
+    else renderFollowUps(data);
+
+    renderEvidence(data);
+  }
+
+  function renderAnswer(data) {
+    if (data.steps && data.steps.length) {
+      var steps = el("section", "block");
+      steps.appendChild(el("h3", null, "Checks to run, in order"));
+      var list = el("ol", "steps");
+      data.steps.forEach(function (s) { list.appendChild(el("li", null, s)); });
+      steps.appendChild(list);
+      result.appendChild(steps);
+    }
+    if (data.knownResolution) {
+      var fix = el("section", "block");
+      fix.appendChild(el("h3", null, "Known fix"));
+      fix.appendChild(el("p", null, data.knownResolution));
+      result.appendChild(fix);
+    }
+    if (data.escalationTeam) {
+      var team = el("section", "block");
+      team.appendChild(el("h3", null, "If it continues"));
+      team.appendChild(el("p", null, "Escalate to " + data.escalationTeam + "."));
+      result.appendChild(team);
+    }
+    result.appendChild(el("p", "source", "Source: " + (data.sources || []).join(", ")));
+  }
+
+  function renderFollowUps(data) {
+    if (data.sources && data.sources.length) {
+      var possible = el("section", "block");
+      possible.appendChild(el("h3", null, "Possibly related"));
+      var list = el("ul", "steps");
+      data.sources.forEach(function (s) { list.appendChild(el("li", null, s)); });
+      possible.appendChild(list);
+      result.appendChild(possible);
+    }
+    if (data.followUpQuestions && data.followUpQuestions.length) {
+      var more = el("section", "block");
+      more.appendChild(el("h3", null, "Add any of these to your description"));
+      var chips = el("ul", "chips");
+      data.followUpQuestions.forEach(function (q) {
+        var item = el("li");
+        var chip = el("button", "chip", q);
+        chip.type = "button";
+        chip.addEventListener("click", function () {
+          box.value = (box.value.trim() + "\n" + q + " ").trim() + " ";
+          box.focus();
+        });
+        item.appendChild(chip);
+        chips.appendChild(item);
+      });
+      more.appendChild(chips);
+      result.appendChild(more);
+    }
+  }
+
+  function scoreRow(label, valueText, percent) {
+    var row = el("div", "score");
+    row.appendChild(el("span", null, label));
+    var meter = el("div", "meter");
+    meter.setAttribute("role", "img");
+    meter.setAttribute("aria-label", label + " " + valueText);
+    var bar = el("span");
+    meter.appendChild(bar);
+    row.appendChild(meter);
+    row.appendChild(el("b", null, valueText));
+    // set the width after the row is on the page so the bar grows
+    requestAnimationFrame(function () { bar.style.width = Math.max(0, Math.min(100, percent)) + "%"; });
+    return row;
+  }
+
+  var WHY = {
+    ANSWERED: "Used the top entry because it scored highest on both exact words and meaning. The AI only rewrote that entry. The source and team come from the database.",
+    NEED_MORE_INFORMATION: "No single entry stood out clearly, so I did not guess. The AI was not called.",
+    INSUFFICIENT_KNOWLEDGE: "Nothing scored high enough on words or meaning, so I did not guess. The AI was not called."
+  };
+
+  function renderEvidence(data) {
+    clear(evidence);
+    var matches = data.matches || [];
+    if (!matches.length) {
+      evidence.appendChild(el("p", "empty", "No entries scored at all for this question."));
+      return;
+    }
+    var list = el("ul", "matches");
+    matches.forEach(function (m, index) {
+      var item = el("li", data.status === "ANSWERED" && index === 0 ? "picked" : "");
+      var title = el("div", "m-title", m.title + " ");
+      title.appendChild(el("span", "m-id", m.id));
+      item.appendChild(title);
+      // exact-word scores run from 0 to about 25
+      item.appendChild(scoreRow("Exact words", String(Math.round(m.keywordScore)), m.keywordScore / 20 * 100));
+      var cosine = m.cosine === null || m.cosine === undefined;
+      item.appendChild(scoreRow("Meaning", cosine ? "n/a" : m.cosine.toFixed(2), cosine ? 0 : m.cosine * 100));
+      list.appendChild(item);
+    });
+    evidence.appendChild(list);
+    evidence.appendChild(el("p", "why", WHY[data.status] || ""));
+  }
+
+  goButton.addEventListener("click", ask);
+  box.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); ask(); }
+  });
+  addExamples();
+})();
+</script>
+</body>
+</html>
